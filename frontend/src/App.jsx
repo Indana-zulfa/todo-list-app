@@ -1,6 +1,104 @@
+import { useState } from 'react'
 import './App.css'
 
 function App() {
+  const [tasks, setTasks] = useState([])
+
+  const [newTask, setNewTask] = useState('')
+  const [priority, setPriority] = useState('Medium')
+  const [dueDate, setDueDate] = useState('')
+  const [filter, setFilter] = useState('All')
+  const [editingTask, setEditingTask] = useState(null)
+
+  const handleAddTask = () => {
+    if (newTask.trim() === '') {
+      return
+    }
+
+    const task = {
+      id: Date.now(),
+      title: newTask,
+      priority,
+      dueDate,
+      status: 'Pending',
+    }
+
+    setTasks([...tasks, task])
+    setNewTask('')
+  }
+
+  const handleCompleteTask = (id) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id
+          ? { ...task, status: 'Completed' }
+          : task
+      )
+    )
+  }
+
+  const handleDeleteTask = (id) => {
+    setTasks(
+      tasks.filter((task) => task.id !== id)
+    )
+  }
+
+  const handleEditTask = (task) => {
+    setEditingTask(task)
+    setNewTask(task.title)
+    setPriority(task.priority)
+    setDueDate(task.dueDate)
+  }
+
+  const handleUpdateTask = () => {
+    if (newTask.trim() === '') {
+      return
+    }
+
+    setTasks(
+      tasks.map((task) =>
+        task.id === editingTask.id
+          ? {
+              ...task,
+              title: newTask,
+              priority,
+              dueDate,
+            }
+          : task
+      )
+    )
+
+    setEditingTask(null)
+    setNewTask('')
+    setPriority('Medium')
+    setDueDate('')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingTask(null)
+    setNewTask('')
+    setPriority('Medium')
+    setDueDate('')
+  }
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === 'All') {
+      return true
+    }
+
+    return task.status === filter
+  })
+
+  const totalTasks = tasks.length
+
+  const pendingTasks = tasks.filter(
+    (task) => task.status === 'Pending'
+  ).length
+
+  const completedTasks = tasks.filter(
+    (task) => task.status === 'Completed'
+  ).length
+
   return (
     <div className="app">
       <header className="header">
@@ -14,38 +112,63 @@ function App() {
         <section className="summary">
           <div className="summary-card">
             <span>Total Tasks</span>
-            <strong>5</strong>
+            <strong>{totalTasks}</strong>
           </div>
 
           <div className="summary-card">
             <span>Pending</span>
-            <strong>3</strong>
+            <strong>{pendingTasks}</strong>
           </div>
 
           <div className="summary-card">
             <span>Completed</span>
-            <strong>2</strong>
+            <strong>{completedTasks}</strong>
           </div>
         </section>
 
         <section className="add-task">
-          <h2>Add New Task</h2>
+          <h2>
+            {editingTask ? 'Edit Task' : 'Add New Task'}
+          </h2>
 
           <div className="task-form">
             <input
               type="text"
               placeholder="What do you need to do?"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
             />
 
-            <select>
-              <option>Low Priority</option>
-              <option>Medium Priority</option>
-              <option>High Priority</option>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            >
+              <option value="Low">Low Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="High">High Priority</option>
             </select>
 
-            <input type="date" />
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
 
-            <button>Add Task</button>
+            <button
+              onClick={
+                editingTask
+                  ? handleUpdateTask
+                  : handleAddTask
+              }
+            >
+              {editingTask ? 'Save Changes' : 'Add Task'}
+            </button>
+
+            {editingTask && (
+              <button onClick={handleCancelEdit}>
+                Cancel
+              </button>
+            )}
           </div>
         </section>
 
@@ -53,51 +176,55 @@ function App() {
           <div className="section-header">
             <h2>My Tasks</h2>
 
-            <select>
-              <option>All Tasks</option>
-              <option>Pending</option>
-              <option>Completed</option>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="All">All Tasks</option>
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
             </select>
           </div>
 
           <div className="task-list">
-            <div className="task-card">
-              <div className="task-info">
-                <h3>Finish thesis presentation</h3>
-                <p>Prepare slides for the thesis defense.</p>
-              </div>
+            {filteredTasks.map((task) => (
+              <div className="task-card" key={task.id}>
+                <div className="task-info">
+                  <h3>{task.title}</h3>
+                  <p>Due Date: {task.dueDate}</p>
+                </div>
 
-              <div className="task-meta">
-                <span className="priority high">High</span>
-                <span className="status pending">Pending</span>
-                <button>Complete</button>
-              </div>
-            </div>
+                <div className="task-meta">
+                  <span
+                    className={`priority ${task.priority.toLowerCase()}`}
+                  >
+                    {task.priority}
+                  </span>
 
-            <div className="task-card">
-              <div className="task-info">
-                <h3>Upload project to GitHub</h3>
-                <p>Organize project files and documentation.</p>
-              </div>
+                  <span className="status pending">
+                    {task.status}
+                  </span>
 
-              <div className="task-meta">
-                <span className="priority medium">Medium</span>
-                <span className="status pending">Pending</span>
-                <button>Complete</button>
-              </div>
-            </div>
+                  <button
+                    onClick={() => handleEditTask(task)}
+                  >
+                    Edit
+                  </button>
 
-            <div className="task-card completed-task">
-              <div className="task-info">
-                <h3>Learn React basics</h3>
-                <p>Understand components and JSX.</p>
-              </div>
+                  <button
+                    onClick={() => handleDeleteTask(task.id)}
+                  >
+                    Delete
+                  </button>
 
-              <div className="task-meta">
-                <span className="priority low">Low</span>
-                <span className="status completed">Completed</span>
+                  <button
+                    onClick={() => handleCompleteTask(task.id)}
+                  >
+                    Complete
+                  </button>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </section>
       </main>
