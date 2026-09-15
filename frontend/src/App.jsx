@@ -1,8 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
   const [tasks, setTasks] = useState([])
+
+  useEffect(() => {
+    fetch('http://localhost:3000/api/tasks')
+      .then((response) => response.json())
+      .then((data) => {
+        setTasks(data)
+      })
+  }, [])
 
   const [newTask, setNewTask] = useState('')
   const [priority, setPriority] = useState('Medium')
@@ -15,16 +23,24 @@ function App() {
       return
     }
 
-    const task = {
-      id: Date.now(),
-      title: newTask,
-      priority,
-      dueDate,
-      status: 'Pending',
-    }
-
-    setTasks([...tasks, task])
-    setNewTask('')
+    fetch('http://localhost:3000/api/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: newTask,
+        priority: priority,
+        dueDate: dueDate,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setTasks([...tasks, data])
+        setNewTask('')
+        setPriority('Medium')
+        setDueDate('')
+      })
   }
 
   const handleCompleteTask = (id) => {
@@ -191,7 +207,7 @@ function App() {
               <div className="task-card" key={task.id}>
                 <div className="task-info">
                   <h3>{task.title}</h3>
-                  <p>Due Date: {task.dueDate}</p>
+                  <p>Due Date: {task.due_date || task.dueDate}</p>
                 </div>
 
                 <div className="task-meta">
